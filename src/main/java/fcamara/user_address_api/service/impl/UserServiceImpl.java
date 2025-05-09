@@ -1,0 +1,142 @@
+package fcamara.user_address_api.service.impl;
+
+import fcamara.user_address_api.dto.request.UserRequestDTO;
+import fcamara.user_address_api.dto.response.AddressResponseDTO;
+import fcamara.user_address_api.dto.response.UserResponseDTO;
+import fcamara.user_address_api.error.exception.InternalServer.InternalServerException;
+import fcamara.user_address_api.error.exception.badRequest.BadRequestException;
+import fcamara.user_address_api.error.exception.forbidden.ForbiddenException;
+import fcamara.user_address_api.error.exception.notFound.NotFoundException;
+import fcamara.user_address_api.model.Role;
+import fcamara.user_address_api.model.User;
+import fcamara.user_address_api.repository.UserRepository;
+import fcamara.user_address_api.service.UserService;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Transactional
+    @Override
+    public UserResponseDTO createUser(UserRequestDTO dto) {
+        try {
+            if (userRepository.existsByEmail(dto.getEmail())) {
+                throw new BadRequestException("Email is already in use");
+            }
+
+            User user = User.builder()
+                    .name(dto.getName())
+                    .email(dto.getEmail())
+                    .password(passwordEncoder.encode(dto.getPassword()))
+                    .role(Role.USER)
+                    .build();
+
+            User saved = userRepository.save(user);
+            return toResponseDTO(saved);
+        } catch (DataIntegrityViolationException e) {
+            throw new BadRequestException("Integrity violation: " + e.getMessage());
+        } catch (Exception e) {
+            throw new InternalServerException("Failed to create user");
+        }
+    }
+
+    @Override
+    public UserResponseDTO getUserById(UUID id, Authentication auth) {
+        User currentUser = getAuthenticatedUser(auth);
+
+        if (!currentUser.getId().equals(id) && currentUser.getRole() != Role.ADMIN) {
+            throw new ForbiddenException("You do not have permission to query this user.");
+        }
+
+        return userRepository.findById(id)
+                .map(this::toResponseDTO)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
+    @Override
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
+    @Override
+    public Page<UserResponseDTO> getAllUsers(Pageable pageable, Authentication auth) {
+        User currentUser = getAuthenticatedUser(auth);
+
+        if (currentUser.getRole() != Role.ADMIN) {
+            throw new ForbiddenException("You do not have permission to query all users.");
+        }
+
+        Page<User> userPage = userRepository.findAll(pageable);
+        return userPage.map(this::toResponseDTO);
+    }
+
+    @Transactional
+    @Override
+    public UserResponseDTO updateUser(UUID id, UserRequestDTO dto, Authentication auth) {
+        User currentUser = getAuthenticatedUser(auth);
+
+        if (!currentUser.getId().equals(id) && currentUser.getRole() != Role.ADMIN) {
+            throw new ForbiddenException("You do not have permission to update this user.");
+        }
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        user.setName(dto.getName());
+        user.setEmail(dto.getEmail());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+        try {
+            return toResponseDTO(userRepository.save(user));
+        } catch (DataIntegrityViolationException e) {
+            throw new BadRequestException("Integrity violation: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    @Override
+    public void deleteUser(UUID id, Authentication auth) {
+        User currentUser = getAuthenticatedUser(auth);
+
+        if (!currentUser.getId().equals(id) && currentUser.getRole() != Role.ADMIN) {
+            throw new ForbiddenException("You do not have permission to delete this user.");
+        }
+
+        if (!userRepository.existsById(id)) {
+            throw new NotFoundException("User not found");
+        }
+        userRepository.deleteById(id);
+    }
+
+    private User getAuthenticatedUser(Authentication authentication) {
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("User not found."));
+    }
+
+    private UserResponseDTO toResponseDTO(User user) {
+        return UserResponseDTO.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .createdAt(user.getCreatedAt())
+                .build();
+    }
+}

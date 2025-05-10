@@ -1,5 +1,6 @@
 package fcamara.user_address_api.security.service;
 
+import fcamara.user_address_api.model.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -13,6 +14,7 @@ import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -40,8 +42,9 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(Map.of(), userDetails);
+    public String generateToken(User user) {
+        Map<String, Object> extraClaims = Map.of("userId", user.getId());
+        return generateToken(extraClaims, user);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
@@ -65,6 +68,10 @@ public class JwtService {
 
     private Date extractExpiration(String token) {
         return extractClaim(token, io.jsonwebtoken.Claims::getExpiration);
+    }
+
+    public UUID extractUserId(String token) {
+        return extractClaim(token, claims -> UUID.fromString(claims.get("userId", String.class)));
     }
 
     private io.jsonwebtoken.Claims extractAllClaims(String token) {

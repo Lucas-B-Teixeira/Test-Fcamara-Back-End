@@ -2,6 +2,7 @@ package fcamara.user_address_api.controller;
 
 import fcamara.user_address_api.dto.request.UserRequestDTO;
 import fcamara.user_address_api.dto.response.UserResponseDTO;
+import fcamara.user_address_api.security.service.JwtService;
 import fcamara.user_address_api.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -19,14 +20,16 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 @Tag(name = "Users", description = "User management operations")
 public class UserController {
 
     private final UserService userService;
+    private final JwtService jwtService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, JwtService jwtService) {
         this.userService = userService;
+        this.jwtService = jwtService;
     }
 
     @Operation(summary = "Create a new user", description = "Registers a new user in the system.")
@@ -39,6 +42,20 @@ public class UserController {
     public ResponseEntity<UserResponseDTO> createUser(@RequestBody UserRequestDTO userRequestDTO) {
         UserResponseDTO userResponseDTO = userService.createUser(userRequestDTO);
         return new ResponseEntity<>(userResponseDTO, HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Get current logged-in user", description = "Returns the data osf the authenticated user",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User data retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized or token invalid")
+    })
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> getCurrentUser(@RequestHeader("Authorization") String authHeader, Authentication auth) {
+        String token = authHeader.replace("Bearer ", "").trim();
+        UUID userId = jwtService.extractUserId(token);
+        UserResponseDTO user = userService.getUserById(userId, auth); // Assumindo que você tem esse método
+        return ResponseEntity.ok(user);
     }
 
     @Operation(summary = "Get user by ID", description = "Retrieves a user by ID. Users can only fetch their own data, except admins.",

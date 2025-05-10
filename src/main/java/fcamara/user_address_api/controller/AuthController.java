@@ -13,7 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 public class AuthController {
     private final UserService userService;
     private final JwtService jwtService;
@@ -35,10 +35,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@RequestBody AuthRequestDTO request) {
         try {
+            String email = request.getEmail().toLowerCase();
+
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(email, request.getPassword())
             );
-            User user = userService.getUserByEmail(request.getEmail());
+            User user = userService.getUserByEmail(email);
             String token = jwtService.generateToken(user);
             return ResponseEntity.ok(new AuthResponseDTO(token));
         } catch (AuthenticationException e) {

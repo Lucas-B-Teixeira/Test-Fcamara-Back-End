@@ -41,7 +41,7 @@ public class UserServiceImpl implements UserService {
 
             User user = User.builder()
                     .name(dto.getName())
-                    .email(dto.getEmail())
+                    .email(dto.getEmail().toLowerCase())
                     .password(passwordEncoder.encode(dto.getPassword()))
                     .role(Role.USER)
                     .build();
@@ -70,7 +70,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmail(email.toLowerCase())
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
@@ -99,7 +99,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         user.setName(dto.getName());
-        user.setEmail(dto.getEmail());
+        user.setEmail(dto.getEmail().toLowerCase());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
 
         try {

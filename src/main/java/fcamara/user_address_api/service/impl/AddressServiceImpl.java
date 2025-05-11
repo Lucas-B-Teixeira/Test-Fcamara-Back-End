@@ -51,6 +51,35 @@ public class AddressServiceImpl implements AddressService {
         return toResponse(address);
     }
 
+    @Transactional
+    @Override
+    public AddressResponseDTO addAddressToUserAsAdmin(UUID userId, AddressRequestDTO request, Authentication auth) {
+        User currentUser = getAuthenticatedUser(auth);
+
+        if (currentUser.getRole() != Role.ADMIN) {
+            throw new ForbiddenException("Only admins can add addresses to other users.");
+        }
+
+        var viaCep = viaCepClient.getAddressFromCep(request.getZipCode());
+
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found."));
+
+        Address address = Address.builder()
+                .zipCode(request.getZipCode())
+                .number(request.getNumber())
+                .complement(request.getComplement())
+                .street(viaCep.getLogradouro())
+                .district(viaCep.getBairro())
+                .city(viaCep.getLocalidade())
+                .state(viaCep.getUf())
+                .user(targetUser)
+                .build();
+
+        Address saved = addressRepository.save(address);
+        return toResponse(saved);
+    }
+
     @Override
     public Page<AddressResponseDTO> listAddresses(Pageable pageable, Authentication authentication) {
         User user = getAuthenticatedUser(authentication);
@@ -76,10 +105,33 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
+    public Page<AddressResponseDTO> getAllAddresses(Pageable pageable, Authentication auth) {
+        User currentUser = getAuthenticatedUser(auth);
+
+        if (currentUser.getRole() != Role.ADMIN) {
+            throw new ForbiddenException("Only admins can access all addresses.");
+        }
+
+        Page<Address> addressPage = addressRepository.findByUserIdNot(currentUser.getId(), pageable);
+        return addressPage.map(this::toResponse);
+    }
+
+    @Override
+    public long countAddress(Authentication auth) {
+        User currentUser = getAuthenticatedUser(auth);
+
+        if (currentUser.getRole() == Role.ADMIN) {
+            return addressRepository.count();
+        } else {
+            return addressRepository.countByUserId(currentUser.getId());
+        }
+    }
+
+    @Override
     public AddressResponseDTO getAddressById(UUID id, Authentication authentication) {
         User currentUser = getAuthenticatedUser(authentication);
 
-        if (!currentUser.getId().equals(id) && currentUser.getRole() != Role.ADMIN) {
+        if (currentUser.getRole() != Role.ADMIN) {
             throw new ForbiddenException("You do not have permission to query this address.");
         }
 
@@ -94,12 +146,12 @@ public class AddressServiceImpl implements AddressService {
     public AddressResponseDTO updateAddress(UUID id, AddressRequestDTO request, Authentication authentication) {
         User currentUser = getAuthenticatedUser(authentication);
 
-        if (!currentUser.getId().equals(id) && currentUser.getRole() != Role.ADMIN) {
+        Address address = addressRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Address not found."));
+
+        if (!address.getUser().getId().equals(currentUser.getId()) && currentUser.getRole() != Role.ADMIN) {
             throw new ForbiddenException("You do not have permission to update this address.");
         }
-
-        Address address = addressRepository.findByIdAndUser(id, currentUser)
-                .orElseThrow(() -> new NotFoundException("Address not found."));
 
         var cepResponse = viaCepClient.getAddressFromCep(request.getZipCode());
 
@@ -120,12 +172,13 @@ public class AddressServiceImpl implements AddressService {
     public void deleteAddress(UUID id, Authentication authentication) {
         User currentUser = getAuthenticatedUser(authentication);
 
-        if (!currentUser.getId().equals(id) && currentUser.getRole() != Role.ADMIN) {
-            throw new ForbiddenException("You do not have permission to delete this address.");
+        Address address = addressRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Address not found."));
+
+        if (!address.getUser().getId().equals(currentUser.getId()) && currentUser.getRole() != Role.ADMIN) {
+            throw new ForbiddenException("You do not have permission to update this address.");
         }
 
-        Address address = addressRepository.findByIdAndUser(id, currentUser)
-                .orElseThrow(() -> new NotFoundException("Address not found."));
         addressRepository.delete(address);
     }
 
@@ -145,6 +198,7 @@ public class AddressServiceImpl implements AddressService {
                 .district(address.getDistrict())
                 .city(address.getCity())
                 .state(address.getState())
+                .userEmail(address.getUser().getEmail())
                 .build();
     }
 }

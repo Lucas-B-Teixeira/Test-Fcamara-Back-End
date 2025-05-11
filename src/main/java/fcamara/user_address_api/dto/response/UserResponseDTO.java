@@ -36,6 +36,12 @@ public class UserResponseDTO {
     private String role;
 
     @Schema(
+            description = "The number of addresses associated with the user.",
+            example = "3"
+    )
+    private long addressCount;
+
+    @Schema(
             description = "The date and time when the user was created.",
             example = "2025-05-08T14:35:00"
     )

@@ -57,4 +57,10 @@ public class AddressResponseDTO {
             example = "12345-678"
     )
     private String zipCode;
+
+    @Schema(
+            description = "Email of the user who owns the address",
+            example = "john.doe@example.com"
+    )
+    private String userEmail;
 }

@@ -1,6 +1,7 @@
 package fcamara.user_address_api.controller;
 
 import fcamara.user_address_api.dto.request.UserRequestDTO;
+import fcamara.user_address_api.dto.request.UserRequestEditDTO;
 import fcamara.user_address_api.dto.response.UserResponseDTO;
 import fcamara.user_address_api.security.service.JwtService;
 import fcamara.user_address_api.service.UserService;
@@ -88,6 +89,17 @@ public class UserController {
         return new ResponseEntity<>(userPage, HttpStatus.OK);
     }
 
+    @Operation(summary = "Get total number of users", description = "Returns the total number of registered users.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Count successfully retrieved")
+    })
+    @GetMapping("/count")
+    public ResponseEntity<Long> getUserCount(Authentication auth) {
+        long count = userService.countUsers(auth);
+        return ResponseEntity.ok(count);
+    }
+
     @Operation(summary = "Update a user", description = "Updates the data of a specific user. Users can only update themselves unless they are admins.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -97,8 +109,8 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable UUID id, @RequestBody UserRequestDTO userRequestDTO, Authentication auth) {
-        UserResponseDTO updatedUser = userService.updateUser(id, userRequestDTO, auth);
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable UUID id, @RequestBody UserRequestEditDTO userRequestEditDTO, Authentication auth) {
+        UserResponseDTO updatedUser = userService.updateUser(id, userRequestEditDTO, auth);
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
 

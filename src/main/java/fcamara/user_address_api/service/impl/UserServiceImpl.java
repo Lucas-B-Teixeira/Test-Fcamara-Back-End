@@ -1,7 +1,7 @@
 package fcamara.user_address_api.service.impl;
 
 import fcamara.user_address_api.dto.request.UserRequestDTO;
-import fcamara.user_address_api.dto.response.AddressResponseDTO;
+import fcamara.user_address_api.dto.request.UserRequestEditDTO;
 import fcamara.user_address_api.dto.response.UserResponseDTO;
 import fcamara.user_address_api.error.exception.InternalServer.InternalServerException;
 import fcamara.user_address_api.error.exception.badRequest.BadRequestException;
@@ -9,6 +9,7 @@ import fcamara.user_address_api.error.exception.forbidden.ForbiddenException;
 import fcamara.user_address_api.error.exception.notFound.NotFoundException;
 import fcamara.user_address_api.model.Role;
 import fcamara.user_address_api.model.User;
+import fcamara.user_address_api.repository.AddressRepository;
 import fcamara.user_address_api.repository.UserRepository;
 import fcamara.user_address_api.service.UserService;
 import jakarta.transaction.Transactional;
@@ -20,14 +21,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private final AddressRepository addressRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -86,9 +86,20 @@ public class UserServiceImpl implements UserService {
         return userPage.map(this::toResponseDTO);
     }
 
+    @Override
+    public long countUsers(Authentication auth) {
+        User currentUser = getAuthenticatedUser(auth);
+
+        if (currentUser.getRole() != Role.ADMIN) {
+            throw new ForbiddenException("You do not have permission to query all users.");
+        }
+
+        return userRepository.count();
+    }
+
     @Transactional
     @Override
-    public UserResponseDTO updateUser(UUID id, UserRequestDTO dto, Authentication auth) {
+    public UserResponseDTO updateUser(UUID id, UserRequestEditDTO dto, Authentication auth) {
         User currentUser = getAuthenticatedUser(auth);
 
         if (!currentUser.getId().equals(id) && currentUser.getRole() != Role.ADMIN) {
@@ -100,7 +111,9 @@ public class UserServiceImpl implements UserService {
 
         user.setName(dto.getName());
         user.setEmail(dto.getEmail().toLowerCase());
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        if(currentUser.getRole() == Role.ADMIN){
+            user.setRole(dto.getRole());
+        }
 
         try {
             return toResponseDTO(userRepository.save(user));
@@ -131,12 +144,15 @@ public class UserServiceImpl implements UserService {
     }
 
     private UserResponseDTO toResponseDTO(User user) {
+        long addressCount = addressRepository.countByUserId(user.getId());
+
         return UserResponseDTO.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .createdAt(user.getCreatedAt())
+                .addressCount(addressCount)
                 .build();
     }
 }

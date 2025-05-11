@@ -1,6 +1,7 @@
 package fcamara.user_address_api.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,4 +37,11 @@ public class AddressRequestDTO {
             example = "Apt. 101"
     )
     private String complement;
+
+    @Schema(
+            description = "The email of the user to whom the address should be assigned. Optional, used by admins only.",
+            example = "john.doe@example.com"
+    )
+    @Email(message = "Invalid email format")
+    private String userEmail;
 }

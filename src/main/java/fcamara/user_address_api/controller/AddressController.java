@@ -6,10 +6,14 @@ import fcamara.user_address_api.service.AddressService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -45,6 +49,26 @@ public class AddressController {
     }
 
     @Operation(
+            summary = "Add address to user (ADMIN only)",
+            description = "Allows an admin to add an address to a specific user.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Address successfully created"),
+            @ApiResponse(responseCode = "403", description = "Only admins can access this resource"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @PostMapping("/user/{userId}")
+    public ResponseEntity<AddressResponseDTO> addAddressToUserAsAdmin(
+            @PathVariable UUID userId,
+            @Valid @RequestBody AddressRequestDTO addressDTO,
+            Authentication auth
+    ) {
+        AddressResponseDTO response = addressService.addAddressToUserAsAdmin(userId, addressDTO, auth);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @Operation(
             summary = "Get paginated addresses",
             description = "Retrieves a paginated list of addresses for the authenticated user."
     )
@@ -59,6 +83,26 @@ public class AddressController {
             Authentication auth
     ) {
         return ResponseEntity.ok(addressService.listAddresses(pageable, auth));
+    }
+
+    @Operation(
+            summary = "Get all addresses",
+            description = "Returns a paginated list of all addresses. Only admins can access this.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Addresses successfully retrieved"),
+            @ApiResponse(responseCode = "403", description = "Only admins can access this resource")
+    })
+    @GetMapping("/all")
+    public ResponseEntity<Page<AddressResponseDTO>> getAllAddresses(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "state") String sortBy,
+            Authentication auth
+    ) {
+        Page<AddressResponseDTO> addressPage = addressService.getAllAddresses(PageRequest.of(page, size, Sort.by(sortBy)), auth);
+        return new ResponseEntity<>(addressPage, HttpStatus.OK);
     }
 
     @Operation(
@@ -77,6 +121,18 @@ public class AddressController {
             Authentication auth
     ) {
         return ResponseEntity.ok(addressService.listAddressesByUserId(userId, pageable, auth));
+    }
+
+    @Operation(summary = "Count addresses", description = "Retorna o número total de endereços. Admins veem todos, usuários veem apenas os próprios.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Contagem de endereços obtida com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Sem permissão para acessar este recurso")
+    })
+    @GetMapping("/count")
+    public ResponseEntity<Long> countAddresses(Authentication auth) {
+        long count = addressService.countAddress(auth);
+        return ResponseEntity.ok(count);
     }
 
     @Operation(

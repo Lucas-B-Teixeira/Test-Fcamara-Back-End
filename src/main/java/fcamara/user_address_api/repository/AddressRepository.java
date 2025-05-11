@@ -11,6 +11,8 @@ import java.util.UUID;
 
 public interface AddressRepository extends JpaRepository<Address, UUID> {
     Page<Address> findAllByUserId(UUID userId, Pageable pageable);
-
     Optional<Address> findByIdAndUser(UUID id, User user);
+    long countByUserId(UUID userId);
+    Page<Address> findAll(Pageable pageable);
+    Page<Address> findByUserIdNot(UUID userId, Pageable pageable);
 }

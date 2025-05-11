@@ -1,5 +1,6 @@
-package fcamara.user_address_api.controller;
+package fcamara.user_address_api.controller.impl;
 
+import fcamara.user_address_api.controller.AuthApi;
 import fcamara.user_address_api.dto.request.AuthRequestDTO;
 import fcamara.user_address_api.dto.response.AuthResponseDTO;
 import fcamara.user_address_api.model.User;
@@ -13,14 +14,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/auth")
-public class AuthController {
+public class AuthControllerImpl implements AuthApi {
     private final UserService userService;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthController(
+    public AuthControllerImpl(
             UserService userService,
             JwtService jwtService,
             AuthenticationManager authenticationManager,
@@ -32,7 +32,7 @@ public class AuthController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    @PostMapping("/login")
+    @Override
     public ResponseEntity<AuthResponseDTO> login(@RequestBody AuthRequestDTO request) {
         try {
             String email = request.getEmail().toLowerCase();

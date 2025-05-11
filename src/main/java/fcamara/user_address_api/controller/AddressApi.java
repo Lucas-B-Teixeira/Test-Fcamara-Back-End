@@ -2,33 +2,24 @@ package fcamara.user_address_api.controller;
 
 import fcamara.user_address_api.dto.request.AddressRequestDTO;
 import fcamara.user_address_api.dto.response.AddressResponseDTO;
-import fcamara.user_address_api.service.AddressService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@RestController
 @RequestMapping("/api/v1/address")
-public class AddressController {
-
-    private final AddressService addressService;
-
-    public AddressController(AddressService addressService) {
-        this.addressService = addressService;
-    }
+@Tag(name = "Address", description = "Address management operations")
+public interface AddressApi {
 
     @Operation(
             summary = "Create a new address",
@@ -41,12 +32,10 @@ public class AddressController {
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
     @PostMapping
-    public ResponseEntity<AddressResponseDTO> create(
+    ResponseEntity<AddressResponseDTO> create(
             @Valid @RequestBody AddressRequestDTO request,
             Authentication auth
-    ) {
-        return ResponseEntity.ok(addressService.createAddress(request, auth));
-    }
+    );
 
     @Operation(
             summary = "Add address to user (ADMIN only)",
@@ -59,14 +48,11 @@ public class AddressController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PostMapping("/user/{userId}")
-    public ResponseEntity<AddressResponseDTO> addAddressToUserAsAdmin(
+    ResponseEntity<AddressResponseDTO> addAddressToUserAsAdmin(
             @PathVariable UUID userId,
             @Valid @RequestBody AddressRequestDTO addressDTO,
             Authentication auth
-    ) {
-        AddressResponseDTO response = addressService.addAddressToUserAsAdmin(userId, addressDTO, auth);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
+    );
 
     @Operation(
             summary = "Get paginated addresses",
@@ -78,12 +64,10 @@ public class AddressController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @GetMapping
-    public ResponseEntity<Page<AddressResponseDTO>> list(
+    ResponseEntity<Page<AddressResponseDTO>> list(
             @ParameterObject Pageable pageable,
             Authentication auth
-    ) {
-        return ResponseEntity.ok(addressService.listAddresses(pageable, auth));
-    }
+    );
 
     @Operation(
             summary = "Get all addresses",
@@ -95,15 +79,12 @@ public class AddressController {
             @ApiResponse(responseCode = "403", description = "Only admins can access this resource")
     })
     @GetMapping("/all")
-    public ResponseEntity<Page<AddressResponseDTO>> getAllAddresses(
+    ResponseEntity<Page<AddressResponseDTO>> getAllAddresses(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "state") String sortBy,
             Authentication auth
-    ) {
-        Page<AddressResponseDTO> addressPage = addressService.getAllAddresses(PageRequest.of(page, size, Sort.by(sortBy)), auth);
-        return new ResponseEntity<>(addressPage, HttpStatus.OK);
-    }
+    );
 
     @Operation(
             summary = "Admin: Get all addresses by user ID",
@@ -115,13 +96,11 @@ public class AddressController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @GetMapping("/user/{userId}")
-    public ResponseEntity<Page<AddressResponseDTO>> listAddressesByUserId(
+    ResponseEntity<Page<AddressResponseDTO>> listAddressesByUserId(
             @PathVariable UUID userId,
             @ParameterObject Pageable pageable,
             Authentication auth
-    ) {
-        return ResponseEntity.ok(addressService.listAddressesByUserId(userId, pageable, auth));
-    }
+    );
 
     @Operation(summary = "Count addresses", description = "Retorna o número total de endereços. Admins veem todos, usuários veem apenas os próprios.",
             security = @SecurityRequirement(name = "bearerAuth"))
@@ -130,10 +109,7 @@ public class AddressController {
             @ApiResponse(responseCode = "403", description = "Sem permissão para acessar este recurso")
     })
     @GetMapping("/count")
-    public ResponseEntity<Long> countAddresses(Authentication auth) {
-        long count = addressService.countAddress(auth);
-        return ResponseEntity.ok(count);
-    }
+    ResponseEntity<Long> countAddresses(Authentication auth);
 
     @Operation(
             summary = "Get address by ID",
@@ -145,12 +121,10 @@ public class AddressController {
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<AddressResponseDTO> getById(
+    ResponseEntity<AddressResponseDTO> getById(
             @PathVariable UUID id,
             Authentication auth
-    ) {
-        return ResponseEntity.ok(addressService.getAddressById(id, auth));
-    }
+    );
 
     @Operation(
             summary = "Update an address",
@@ -162,13 +136,11 @@ public class AddressController {
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<AddressResponseDTO> update(
+    ResponseEntity<AddressResponseDTO> update(
             @PathVariable UUID id,
             @Valid @RequestBody AddressRequestDTO request,
             Authentication auth
-    ) {
-        return ResponseEntity.ok(addressService.updateAddress(id, request, auth));
-    }
+    );
 
     @Operation(
             summary = "Delete an address",
@@ -183,8 +155,5 @@ public class AddressController {
     public ResponseEntity<Void> delete(
             @PathVariable UUID id,
             Authentication auth
-    ) {
-        addressService.deleteAddress(id, auth);
-        return ResponseEntity.noContent().build();
-    }
+    );
 }

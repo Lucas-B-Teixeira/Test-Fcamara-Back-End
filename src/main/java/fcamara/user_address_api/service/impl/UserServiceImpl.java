@@ -5,10 +5,11 @@ import fcamara.user_address_api.dto.request.UserRequestEditDTO;
 import fcamara.user_address_api.dto.response.UserResponseDTO;
 import fcamara.user_address_api.error.exception.InternalServer.InternalServerException;
 import fcamara.user_address_api.error.exception.badRequest.BadRequestException;
+import fcamara.user_address_api.error.exception.conflict.ConflictException;
 import fcamara.user_address_api.error.exception.forbidden.ForbiddenException;
 import fcamara.user_address_api.error.exception.notFound.NotFoundException;
-import fcamara.user_address_api.model.Role;
-import fcamara.user_address_api.model.User;
+import fcamara.user_address_api.entity.Role;
+import fcamara.user_address_api.entity.User;
 import fcamara.user_address_api.repository.AddressRepository;
 import fcamara.user_address_api.repository.UserRepository;
 import fcamara.user_address_api.service.UserService;
@@ -36,7 +37,7 @@ public class UserServiceImpl implements UserService {
     public UserResponseDTO createUser(UserRequestDTO dto) {
         try {
             if (userRepository.existsByEmail(dto.getEmail())) {
-                throw new BadRequestException("Email is already in use");
+                throw new ConflictException("Email is already in use");
             }
 
             User user = User.builder()
@@ -51,6 +52,7 @@ public class UserServiceImpl implements UserService {
         } catch (DataIntegrityViolationException e) {
             throw new BadRequestException("Integrity violation: " + e.getMessage());
         } catch (Exception e) {
+            if (e instanceof ConflictException) throw e;
             throw new InternalServerException("Failed to create user");
         }
     }

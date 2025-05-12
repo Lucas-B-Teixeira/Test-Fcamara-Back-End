@@ -1,7 +1,7 @@
 package fcamara.user_address_api.repository;
 
-import fcamara.user_address_api.model.Address;
-import fcamara.user_address_api.model.User;
+import fcamara.user_address_api.entity.Address;
+import fcamara.user_address_api.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

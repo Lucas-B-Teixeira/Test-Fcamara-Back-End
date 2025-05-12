@@ -1,6 +1,6 @@
 package fcamara.user_address_api.repository;
 
-import fcamara.user_address_api.model.User;
+import fcamara.user_address_api.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.UUID;
 

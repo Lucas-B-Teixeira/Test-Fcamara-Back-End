@@ -52,9 +52,12 @@ public class UserControllerImpl implements UserApi {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
             Authentication auth
     ) {
-        Page<UserResponseDTO> userPage = userService.getAllUsers(PageRequest.of(page, size, Sort.by(sortBy)), auth);
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Page<UserResponseDTO> userPage = userService.getAllUsers(pageRequest, auth);
         return new ResponseEntity<>(userPage, HttpStatus.OK);
     }
 

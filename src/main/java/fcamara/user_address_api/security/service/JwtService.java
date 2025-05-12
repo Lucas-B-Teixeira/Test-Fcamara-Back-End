@@ -1,6 +1,6 @@
 package fcamara.user_address_api.security.service;
 
-import fcamara.user_address_api.model.User;
+import fcamara.user_address_api.entity.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;

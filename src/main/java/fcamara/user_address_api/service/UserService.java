@@ -3,12 +3,11 @@ package fcamara.user_address_api.service;
 import fcamara.user_address_api.dto.request.UserRequestDTO;
 import fcamara.user_address_api.dto.request.UserRequestEditDTO;
 import fcamara.user_address_api.dto.response.UserResponseDTO;
-import fcamara.user_address_api.model.User;
+import fcamara.user_address_api.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface UserService {

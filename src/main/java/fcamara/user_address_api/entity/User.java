@@ -1,4 +1,4 @@
-package fcamara.user_address_api.model;
+package fcamara.user_address_api.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

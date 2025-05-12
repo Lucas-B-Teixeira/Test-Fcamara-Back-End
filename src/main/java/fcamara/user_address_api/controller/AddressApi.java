@@ -65,24 +65,28 @@ public interface AddressApi {
     })
     @GetMapping
     ResponseEntity<Page<AddressResponseDTO>> list(
-            @ParameterObject Pageable pageable,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "state") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
             Authentication auth
     );
 
     @Operation(
-            summary = "Get all addresses",
-            description = "Returns a paginated list of all addresses. Only admins can access this.",
+            summary = "Admin: Get all addresses",
+            description = "Retrieves all addresses in the system (paginated). Only accessible by admin users.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Addresses successfully retrieved"),
-            @ApiResponse(responseCode = "403", description = "Only admins can access this resource")
+            @ApiResponse(responseCode = "200", description = "Addresses retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied")
     })
     @GetMapping("/all")
     ResponseEntity<Page<AddressResponseDTO>> getAllAddresses(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "state") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
             Authentication auth
     );
 
@@ -152,7 +156,7 @@ public interface AddressApi {
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    ResponseEntity<Void> delete(
             @PathVariable UUID id,
             Authentication auth
     );

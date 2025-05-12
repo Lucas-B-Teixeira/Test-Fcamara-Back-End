@@ -46,10 +46,16 @@ public class AddressControllerImpl implements AddressApi {
 
     @Override
     public ResponseEntity<Page<AddressResponseDTO>> list(
-            @ParameterObject Pageable pageable,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "state") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
             Authentication auth
     ) {
-        return ResponseEntity.ok(addressService.listAddresses(pageable, auth));
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Page<AddressResponseDTO> addressPage = addressService.listAddresses(pageRequest, auth);
+        return new ResponseEntity<>(addressPage, HttpStatus.OK);
     }
 
     @Override
@@ -57,9 +63,12 @@ public class AddressControllerImpl implements AddressApi {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "state") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
             Authentication auth
     ) {
-        Page<AddressResponseDTO> addressPage = addressService.getAllAddresses(PageRequest.of(page, size, Sort.by(sortBy)), auth);
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Page<AddressResponseDTO> addressPage = addressService.getAllAddresses(pageRequest, auth);
         return new ResponseEntity<>(addressPage, HttpStatus.OK);
     }
 

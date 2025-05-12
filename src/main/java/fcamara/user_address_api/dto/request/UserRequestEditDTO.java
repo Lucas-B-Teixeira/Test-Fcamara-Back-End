@@ -1,17 +1,20 @@
 package fcamara.user_address_api.dto.request;
 
 
-import fcamara.user_address_api.model.Role;
+import fcamara.user_address_api.entity.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserRequestEditDTO {
 
     @Schema(

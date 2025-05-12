@@ -3,7 +3,7 @@ package fcamara.user_address_api.controller.impl;
 import fcamara.user_address_api.controller.AuthApi;
 import fcamara.user_address_api.dto.request.AuthRequestDTO;
 import fcamara.user_address_api.dto.response.AuthResponseDTO;
-import fcamara.user_address_api.model.User;
+import fcamara.user_address_api.entity.User;
 import fcamara.user_address_api.security.service.JwtService;
 import fcamara.user_address_api.service.UserService;
 import org.springframework.http.ResponseEntity;
